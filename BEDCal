@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>BED Calculator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+        .input-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: inline-block;
+            width: 250px;
+            margin-right: 10px;
+        }
+        input {
+            padding: 5px;
+            width: 150px;
+        }
+        .results {
+            margin-top: 20px;
+            font-weight: bold;
+        }
+        .result-item {
+            margin-bottom: 10px;
+        }
+        input:invalid {
+            border-color: red;
+        }
+    </style>
+</head>
+<body>
+    <h2>BED Calculator</h2>
+    
+    <div class="input-group">
+        <label for="aob">Alpha/Beta Ratio:</label>
+        <input type="number" id="aob" step="any" value="3" oninput="calculate()">
+    </div>
+
+    <div class="input-group">
+        <label for="olim">Conventional limit:</label>
+        <input type="number" id="olim" step="any" oninput="calculate()">
+    </div>
+
+    <div class="input-group">
+        <label for="ofr">Conventional Number of Fractions:</label>
+        <input type="number" id="ofr" step="any" value="30" oninput="calculate()">
+    </div>
+
+    <div class="input-group">
+        <label for="nfr">New Number of Fractions:</label>
+        <input type="number" id="nfr" step="any" oninput="calculate()">
+    </div>
+
+    <div class="results">
+        <div id="newlimit" class="result-item"></div>
+        <div id="bed" class="result-item"></div>
+        <div id="eqd2" class="result-item"></div>
+    </div>
+
+    <script>
+        function calculate() {
+            // Get input values
+            const AoB = parseFloat(document.getElementById('aob').value);
+            const Nfr = parseFloat(document.getElementById('nfr').value);
+            const Olim = parseFloat(document.getElementById('olim').value);
+            const Ofr = parseFloat(document.getElementById('ofr').value);
+
+            // Check if all inputs are valid numbers
+            if (isNaN(AoB) || isNaN(Nfr) || isNaN(Olim) || isNaN(Ofr)) {
+                document.getElementById('newlimit').innerText = 'Please enter valid numbers for all fields';
+                document.getElementById('bed').innerText = '';
+                document.getElementById('eqd2').innerText = '';
+                return;
+            }
+
+            // Calculate new limit
+            const Newlimit = Math.sqrt(AoB * Nfr * Olim + Math.pow(Olim, 2) * Nfr / Ofr + Math.pow(Nfr * AoB / 2, 2)) - Nfr * AoB / 2;
+
+            // Calculate BED
+            const d = Newlimit/Nfr; // dose per fraction
+            const BED = Newlimit * (1 + d/AoB);
+
+            // Calculate EQD2
+            const EQD2 = BED / (1 + 2/AoB);
+
+            // Display results rounded to 2 decimal places
+            document.getElementById('newlimit').innerText = `New Limit = ${Newlimit.toFixed(2)} Gy in ${Nfr} fractions`;
+            document.getElementById('bed').innerText = `BED = ${BED.toFixed(2)} Gy`;
+            document.getElementById('eqd2').innerText = `EQD2 = ${EQD2.toFixed(2)} Gy`;
+        }
+    </script>
+</body>
+</html>
