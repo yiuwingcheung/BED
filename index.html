@@ -1,35 +1,51 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BED Calculator</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             max-width: 600px;
-            margin: 20px auto;
+            margin: 0 auto;
             padding: 20px;
+            background-color: #f9f9f9;
+            color: #333;
+        }
+        h2 {
+            text-align: center;
+            color: #2c3e50;
         }
         .input-group {
             margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
         }
         label {
-            display: inline-block;
-            width: 250px;
-            margin-right: 10px;
+            margin-bottom: 5px;
+            font-weight: bold;
         }
         input {
-            padding: 5px;
-            width: 150px;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        input:invalid {
+            border-color: red;
         }
         .results {
             margin-top: 20px;
             font-weight: bold;
+            background-color: #e9ecef;
+            padding: 10px;
+            border-radius: 5px;
         }
         .result-item {
             margin-bottom: 10px;
-        }
-        input:invalid {
-            border-color: red;
         }
     </style>
 </head>
@@ -42,7 +58,7 @@
     </div>
 
     <div class="input-group">
-        <label for="olim">Conventional limit:</label>
+        <label for="olim">Conventional Limit:</label>
         <input type="number" id="olim" step="any" oninput="calculate()">
     </div>
 
@@ -64,13 +80,11 @@
 
     <script>
         function calculate() {
-            // Get input values
             const AoB = parseFloat(document.getElementById('aob').value);
             const Nfr = parseFloat(document.getElementById('nfr').value);
             const Olim = parseFloat(document.getElementById('olim').value);
             const Ofr = parseFloat(document.getElementById('ofr').value);
 
-            // Check if all inputs are valid numbers
             if (isNaN(AoB) || isNaN(Nfr) || isNaN(Olim) || isNaN(Ofr)) {
                 document.getElementById('newlimit').innerText = 'Please enter valid numbers for all fields';
                 document.getElementById('bed').innerText = '';
@@ -78,17 +92,11 @@
                 return;
             }
 
-            // Calculate new limit
             const Newlimit = Math.sqrt(AoB * Nfr * Olim + Math.pow(Olim, 2) * Nfr / Ofr + Math.pow(Nfr * AoB / 2, 2)) - Nfr * AoB / 2;
+            const d = Newlimit / Nfr; // dose per fraction
+            const BED = Newlimit * (1 + d / AoB);
+            const EQD2 = BED / (1 + 2 / AoB);
 
-            // Calculate BED
-            const d = Newlimit/Nfr; // dose per fraction
-            const BED = Newlimit * (1 + d/AoB);
-
-            // Calculate EQD2
-            const EQD2 = BED / (1 + 2/AoB);
-
-            // Display results rounded to 2 decimal places
             document.getElementById('newlimit').innerText = `New Limit = ${Newlimit.toFixed(2)} Gy in ${Nfr} fractions`;
             document.getElementById('bed').innerText = `BED = ${BED.toFixed(2)} Gy`;
             document.getElementById('eqd2').innerText = `EQD2 = ${EQD2.toFixed(2)} Gy`;
