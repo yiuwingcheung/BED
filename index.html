@@ -1,104 +1,171 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BED and EQD2 Calculator</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
         body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            padding: 10px;
-            background-color: #f9f9f9;
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f0f2f5;
         }
-        h1 {
-            font-size: 1.5em;
-            text-align: center;
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .input-group {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 12px;
+        }
+        .input-field {
+            flex: 1;
         }
         label {
             display: block;
-            margin: 10px 0 5px;
+            margin-bottom: 8px;
+            color: #374151;
+            font-weight: 500;
         }
         input {
             width: 100%;
-            padding: 10px;
-            margin-bottom: 15px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 16px;
+            box-sizing: border-box;
         }
-        #results, #newDoseResult {
-            background-color: #e7f3fe;
-            padding: 10px;
-            border-radius: 5px;
-            margin-top: 10px;
-            text-align: left; /* Align output text to the left */
+        .result {
+            margin-top: 24px;
+            padding: 16px;
+            background: #f3f4f6;
+            border-radius: 8px;
+            display: none;
+        }
+        .result.visible {
+            display: block;
+        }
+        .result-item {
+            margin-bottom: 12px;
+            line-height: 1.5;
+        }
+        .result-value {
+            font-weight: 600;
+            color: #1e40af;
+        }
+        .conversion-section {
+            margin-top: 24px;
+            padding-top: 20px;
+            border-top: 2px solid #e5e7eb;
+        }
+        .conversion-result {
+            margin-top: 16px;
+            padding: 16px;
+            background: #f3f4f6;
+            border-radius: 8px;
+            display: none;
+        }
+        .conversion-result.visible {
+            display: block;
         }
     </style>
 </head>
 <body>
-    <h1>BED and EQD2 Calculator</h1>
-    
-    <label for="alphaBeta">Alpha/Beta Ratio (Gy):</label>
-    <input type="number" id="alphaBeta" required oninput="calculateBED()" placeholder="Enter α/β ratio">
+    <div class="container">
+        <div class="input-group">
+            <div class="input-field">
+                <label for="totalDose">Total Dose (Gy)</label>
+                <input type="number" id="totalDose" step="0.1" placeholder="Enter total dose">
+            </div>
+            <div class="input-field">
+                <label for="fractions">Number of Fractions</label>
+                <input type="number" id="fractions" placeholder="Enter fractions">
+            </div>
+            <div class="input-field">
+                <label for="alphaBeta">α/β Ratio</label>
+                <input type="number" id="alphaBeta" step="0.1" placeholder="Enter α/β ratio">
+            </div>
+        </div>
+        <div class="result" id="resultBox">
+            <div class="result-item">
+                BED: <span id="bed" class="result-value">-</span>
+            </div>
+            <div class="result-item">
+                EQD2: <span id="eqd2" class="result-value">-</span>
+            </div>
+        </div>
 
-    <label for="totalDose">Total Dose (Gy):</label>
-    <input type="number" id="totalDose" required oninput="calculateBED()" placeholder="Enter total dose">
-
-    <label for="fractions">Number of Fractions:</label>
-    <input type="number" id="fractions" required oninput="calculateBED()" placeholder="Enter number of fractions">
-
-    <p id="results"></p>
-    
-    <label for="newFractions">New Number of Fractions:</label>
-    <input type="number" id="newFractions" oninput="calculateNewDose()" placeholder="Enter new number of fractions">
-
-    <p id="newDoseResult"></p>
+        <div class="conversion-section">
+            <div class="input-field">
+                <label for="newFractions">New Number of Fractions</label>
+                <input type="number" id="newFractions" placeholder="Enter new fractions">
+            </div>
+            <div class="conversion-result" id="conversionBox">
+                <div class="result-item">
+                    New Total Dose: <span id="newTotalDose" class="result-value">-</span>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script>
-        let currentBED = 0;
+        function calculateBED(D, d, ab) {
+            return D * (1 + d / ab);
+        }
 
-        function calculateBED() {
-            const alphaBeta = parseFloat(document.getElementById('alphaBeta').value);
+        function calculateEQD2(D, d, ab) {
+            return D * ((d + ab) / (2 + ab));
+        }
+
+        function solveForNewDose(targetBED, n2, ab) {
+            const a = 1/(n2 * ab);
+            const b = 1;
+            const c = -targetBED;
+            return (-b + Math.sqrt(b*b - 4*a*c))/(2*a);
+        }
+
+        function updateResults() {
             const totalDose = parseFloat(document.getElementById('totalDose').value);
             const fractions = parseInt(document.getElementById('fractions').value);
-
-            if (!isNaN(alphaBeta) && !isNaN(totalDose) && !isNaN(fractions) && fractions > 0) {
-                const dosePerFraction = totalDose / fractions;
-                currentBED = fractions * dosePerFraction * (1 + (dosePerFraction / alphaBeta));
-                const EQD2 = currentBED / (1 + (2 / alphaBeta));
-
-                document.getElementById('results').innerHTML =
-                    `BED: ${currentBED.toFixed(2)} Gy<br>EQD2: ${EQD2.toFixed(2)} Gy`;
-            } else {
-                document.getElementById('results').innerHTML = '';
-            }
-        }
-
-        function calculateNewDose() {
-            const newFractions = parseInt(document.getElementById('newFractions').value);
             const alphaBeta = parseFloat(document.getElementById('alphaBeta').value);
+            const resultBox = document.getElementById('resultBox');
+            const conversionBox = document.getElementById('conversionBox');
+            
+            // Only show results if all initial inputs are valid
+            if (!isNaN(totalDose) && !isNaN(fractions) && !isNaN(alphaBeta) && 
+                totalDose > 0 && fractions > 0 && alphaBeta > 0) {
+                
+                const dosePerFraction = totalDose / fractions;
+                const bed = calculateBED(totalDose, dosePerFraction, alphaBeta);
+                const eqd2 = calculateEQD2(totalDose, dosePerFraction, alphaBeta);
 
-            if (!isNaN(newFractions) && newFractions > 0 && currentBED > 0 && !isNaN(alphaBeta)) {
-                const A = 1; // Coefficient for D^2
-                const B = newFractions * (alphaBeta); // Coefficient for D
-                const C = -newFractions * (alphaBeta) * currentBED; // Constant term
+                document.getElementById('bed').textContent = bed.toFixed(2) + ' Gy';
+                document.getElementById('eqd2').textContent = eqd2.toFixed(2) + ' Gy';
+                resultBox.classList.add('visible');
 
-                // Solve the quadratic equation A*D^2 + B*D + C = 0
-                const discriminant = B * B - 4 * A * C;
-                if (discriminant >= 0) {
-                    const D1 = (-B + Math.sqrt(discriminant)) / (2 * A);
-                    const D2 = (-B - Math.sqrt(discriminant)) / (2 * A);
-                    const newTotalDose = D1 > 0 ? D1 : D2; // Take the positive root
-
-                    document.getElementById('newDoseResult').innerHTML =
-                        `New Total Dose: ${newTotalDose.toFixed(2)} Gy`;
+                // Check if new fractions input exists
+                const newFractions = parseInt(document.getElementById('newFractions').value);
+                if (!isNaN(newFractions) && newFractions > 0) {
+                    const newTotalDose = solveForNewDose(bed, newFractions, alphaBeta);
+                    document.getElementById('newTotalDose').textContent = newTotalDose.toFixed(2) + ' Gy';
+                    conversionBox.classList.add('visible');
                 } else {
-                    document.getElementById('newDoseResult').innerHTML = 'No valid solution for the new total dose.';
+                    conversionBox.classList.remove('visible');
                 }
             } else {
-                document.getElementById('newDoseResult').innerHTML = '';
+                resultBox.classList.remove('visible');
+                conversionBox.classList.remove('visible');
             }
         }
+
+        // Add event listeners
+        document.getElementById('totalDose').addEventListener('input', updateResults);
+        document.getElementById('fractions').addEventListener('input', updateResults);
+        document.getElementById('alphaBeta').addEventListener('input', updateResults);
+        document.getElementById('newFractions').addEventListener('input', updateResults);
     </script>
 </body>
 </html>
