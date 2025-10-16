@@ -38,6 +38,35 @@
             font-size: 16px;
             box-sizing: border-box;
         }
+        
+        /* Hide spinner buttons for number inputs */
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type="number"] {
+            -moz-appearance: textfield; /* Firefox */
+        }
+        
+        .preset-button {
+            background: #1e40af;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+        .preset-button:hover {
+            background: #1e3a8a;
+        }
+        .preset-button:active {
+            background: #1d4ed8;
+        }
+        
         .result {
             margin-top: 24px;
             padding: 16px;
@@ -78,15 +107,24 @@
         <div class="input-group">
             <div class="input-field">
                 <label for="totalDose">Total Dose (Gy)</label>
-                <input type="number" id="totalDose" step="0.1" placeholder="Enter total dose">
+                <input type="number" id="totalDose" placeholder="Enter total dose">
+							<p></p>
+                <div>
+                    <button type="button" id="dosePerFractionButton" class="preset-button">&uarr; D / fr:</button>
+                    <input type="number" id="dosePerFraction" placeholder="Gy/fr" style="width: 80px;  display: inline-block;">
+                </div>
             </div>
             <div class="input-field">
                 <label for="fractions">Number of Fractions</label>
                 <input type="number" id="fractions" placeholder="Enter fractions">
+                <p></p>
+                <div>
+                    <button type="button" id="twoGyButton" class="preset-button">&uarr; 2 Gy/fr</button>
+                </div>
             </div>
             <div class="input-field">
                 <label for="alphaBeta">α/β Ratio</label>
-                <input type="number" id="alphaBeta" step="0.1" placeholder="Enter α/β ratio">
+                <input type="number" id="alphaBeta" placeholder="Enter α/β ratio">
             </div>
         </div>
         <div class="result" id="resultBox">
@@ -129,7 +167,7 @@
 
         function updateResults() {
             const totalDose = parseFloat(document.getElementById('totalDose').value);
-            const fractions = parseInt(document.getElementById('fractions').value);
+            const fractions = parseFloat(document.getElementById('fractions').value);
             const alphaBeta = parseFloat(document.getElementById('alphaBeta').value);
             const resultBox = document.getElementById('resultBox');
             const conversionBox = document.getElementById('conversionBox');
@@ -147,7 +185,7 @@
                 resultBox.classList.add('visible');
 
                 // Check if new fractions input exists
-                const newFractions = parseInt(document.getElementById('newFractions').value);
+                const newFractions = parseFloat(document.getElementById('newFractions').value);
                 if (!isNaN(newFractions) && newFractions > 0) {
                     const newTotalDose = solveForNewDose(bed, newFractions, alphaBeta);
                     document.getElementById('newTotalDose').textContent = newTotalDose.toFixed(2) + ' Gy';
@@ -161,11 +199,41 @@
             }
         }
 
+        // Dose/Fraction button functionality
+        document.getElementById('dosePerFractionButton').addEventListener('click', function() {
+            const dosePerFraction = parseFloat(document.getElementById('dosePerFraction').value);
+            const fractions = parseFloat(document.getElementById('fractions').value);
+            
+            if (!isNaN(dosePerFraction) && dosePerFraction > 0 && 
+                !isNaN(fractions) && fractions > 0) {
+                const totalDose = dosePerFraction * fractions;
+                document.getElementById('totalDose').value = totalDose.toFixed(2);
+                updateResults(); // Trigger calculation update
+            } else {
+                alert('Please enter valid Dose/Fraction and Number of Fractions values.');
+            }
+        });
+
+        // 2 Gy/fr button functionality
+        document.getElementById('twoGyButton').addEventListener('click', function() {
+            const totalDose = parseFloat(document.getElementById('totalDose').value);
+            if (!isNaN(totalDose) && totalDose > 0) {
+                const fractions = totalDose / 2; // Calculate fractions for 2 Gy per fraction
+                document.getElementById('fractions').value = fractions;
+                updateResults(); // Trigger calculation update
+            } else {
+                alert('Please enter a valid total dose first.');
+            }
+        });
+
         // Add event listeners
         document.getElementById('totalDose').addEventListener('input', updateResults);
         document.getElementById('fractions').addEventListener('input', updateResults);
         document.getElementById('alphaBeta').addEventListener('input', updateResults);
         document.getElementById('newFractions').addEventListener('input', updateResults);
+        document.getElementById('dosePerFraction').addEventListener('input', function() {
+            // Optional: Auto-calculate total dose when typing, but only on button click for now
+        });
     </script>
 </body>
 </html>
